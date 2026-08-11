@@ -1,0 +1,35 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.trackingmore.com/v4/
+info:
+  title: TrackingMore Track API
+  version: 4.0.0
+paths:
+  /trackings/create:
+    post:
+      operationId: createTracking
+      parameters:
+        - name: tracking_number
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: carrier_code
+          in: query
+          required: true
+          schema:
+            type: string
+  /trackings/{tracking_number}/{carrier_code}:
+    get:
+      operationId: getTracking
+      parameters:
+        - name: tracking_number
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: carrier_code
+          in: path
+          required: true
+          schema:
+            type: string

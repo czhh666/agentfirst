@@ -1,0 +1,15 @@
+api_id: logistics
+base_url: https://api.trackingmore.com/v4/
+auth_header: Trackingmore-Api-Key
+auth_value: YOUR_TRACKINGMORE_KEY
+cache_ttl: 300
+cache_methods: [GET]
+slim_mode: safe
+include_fields:
+  - data.tracking_number
+  - data.carrier_code
+  - data.status
+  - data.last_event
+  - data.origin_info.trackinfo.0.Location
+  - data.origin_info.trackinfo.0.Description
+  - data.origin_info.trackinfo.0.Date

@@ -1,0 +1,17 @@
+api_id: zipcode
+base_url: https://api.zippopotam.us/
+cache_ttl: 86400
+cache_methods: [GET]
+slim_mode: strict
+include_fields:
+  - post code
+  - country
+  - places.0.place name
+  - places.0.state
+  - places.0.state abbreviation
+  - places.0.latitude
+  - places.0.longitude
+short_map:
+  post code: zip
+  place name: name
+  state abbreviation: state_abbr

@@ -1,0 +1,28 @@
+openapi: 3.0.0
+servers:
+  - url: https://geocoding-api.open-meteo.com/v1/
+info:
+  title: Open-Meteo Geocoding API
+  version: 1.0.0
+paths:
+  /search:
+    get:
+      operationId: searchPlace
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: count
+          in: query
+          schema:
+            type: integer
+        - name: language
+          in: query
+          schema:
+            type: string
+        - name: format
+          in: query
+          schema:
+            type: string

@@ -1,0 +1,53 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.open-meteo.com/v1/
+info:
+  title: Open-Meteo Forecast API
+  version: 1.0.0
+paths:
+  /forecast:
+    get:
+      operationId: getForecast
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: current
+          in: query
+          schema:
+            type: string
+        - name: hourly
+          in: query
+          schema:
+            type: string
+  /archive:
+    get:
+      operationId: getArchive
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string

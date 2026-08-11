@@ -1,0 +1,14 @@
+api_id: geocoding
+base_url: https://geocoding-api.open-meteo.com/v1/
+cache_ttl: 86400
+cache_methods: [GET]
+slim_mode: strict
+include_fields:
+  - results.0.name
+  - results.0.latitude
+  - results.0.longitude
+  - results.0.elevation
+  - results.0.country
+  - results.0.admin1
+  - results.0.timezone
+  - results.0.population

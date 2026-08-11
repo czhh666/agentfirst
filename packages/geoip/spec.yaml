@@ -1,0 +1,20 @@
+openapi: 3.0.0
+servers:
+  - url: https://ipapi.co/
+info:
+  title: ipapi IP Geolocation API
+  version: 1.0.0
+paths:
+  /{ip}/json/:
+    get:
+      operationId: lookupIp
+      parameters:
+        - name: ip
+          in: path
+          required: true
+          schema:
+            type: string
+  /json/:
+    get:
+      operationId: myIp
+      parameters: []

@@ -1,0 +1,33 @@
+openapi: 3.0.0
+servers:
+  - url: https://openapi.tianyancha.com/services/open/
+info:
+  title: Tianyancha Enterprise Search API
+  version: 1.0.0
+paths:
+  /ic/baseinfo/normal:
+    get:
+      operationId: searchCompany
+      parameters:
+        - name: keyword
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageNum
+          in: query
+          schema:
+            type: integer
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+  /ic/risk/loans:
+    get:
+      operationId: companyLoans
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer

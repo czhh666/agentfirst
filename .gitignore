@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Local config & runtime data (never publish keys or databases)
+config.yaml
+data/
+specs/
+
+# OS
+.DS_Store
+Thumbs.db

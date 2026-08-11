@@ -1,0 +1,16 @@
+api_id: airquality
+base_url: https://air-quality-api.open-meteo.com/v1/
+cache_ttl: 900
+cache_methods: [GET]
+slim_mode: strict
+include_fields:
+  - current.time
+  - current.pm10
+  - current.pm2_5
+  - current.nitrogen_dioxide
+  - current.ozone
+  - current_units.pm10
+  - current_units.pm2_5
+short_map:
+  nitrogen_dioxide: no2
+  pm2_5: pm25

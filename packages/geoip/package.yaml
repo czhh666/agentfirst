@@ -1,0 +1,19 @@
+api_id: geoip
+base_url: https://ipapi.co/
+cache_ttl: 86400
+cache_methods: [GET]
+slim_mode: strict
+include_fields:
+  - ip
+  - city
+  - region
+  - country_name
+  - country_code
+  - latitude
+  - longitude
+  - timezone
+  - org
+  - postal
+short_map:
+  country_name: cn
+  country_code: cc

@@ -1,0 +1,15 @@
+api_id: weather
+base_url: https://api.open-meteo.com/v1/
+cache_ttl: 60
+cache_methods: [GET]
+slim_mode: strict
+include_fields:
+  - current.temperature_2m
+  - current.relative_humidity_2m
+  - current.apparent_temperature
+  - current_units.temperature_2m
+  - current_units.apparent_temperature
+short_map:
+  temperature_2m: t
+  relative_humidity_2m: h
+  apparent_temperature: at

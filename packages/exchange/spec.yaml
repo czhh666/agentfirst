@@ -1,0 +1,32 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.frankfurter.app/
+info:
+  title: Frankfurter Exchange Rate API
+  version: 1.0.0
+paths:
+  /latest:
+    get:
+      operationId: latestRates
+      parameters:
+        - name: base
+          in: query
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          schema:
+            type: string
+  /{date}:
+    get:
+      operationId: historicalRates
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: base
+          in: query
+          schema:
+            type: string

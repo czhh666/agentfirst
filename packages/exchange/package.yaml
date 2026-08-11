@@ -1,0 +1,19 @@
+api_id: exchange
+base_url: https://api.frankfurter.app/
+cache_ttl: 3600
+cache_methods: [GET]
+slim_mode: strict
+include_fields:
+  - amount
+  - base
+  - date
+  - rates.CNY
+  - rates.USD
+  - rates.EUR
+  - rates.JPY
+  - rates.GBP
+  - rates.HKD
+  - rates.KRW
+  - rates.SGD
+short_map:
+  rates: r

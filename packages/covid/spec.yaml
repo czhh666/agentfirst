@@ -1,0 +1,41 @@
+openapi: 3.0.0
+servers:
+  - url: https://disease.sh/v3/covid-19/
+info:
+  title: Disease.sh COVID-19 API
+  version: 3.0.0
+paths:
+  /countries/{country}:
+    get:
+      operationId: countryStats
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: yesterday
+          in: query
+          schema:
+            type: boolean
+        - name: twoDaysAgo
+          in: query
+          schema:
+            type: boolean
+  /all:
+    get:
+      operationId: globalStats
+      parameters: []
+  /historical/{country}:
+    get:
+      operationId: countryHistory
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: lastdays
+          in: query
+          schema:
+            type: integer

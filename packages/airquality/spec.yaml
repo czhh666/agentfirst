@@ -1,0 +1,29 @@
+openapi: 3.0.0
+servers:
+  - url: https://air-quality-api.open-meteo.com/v1/
+info:
+  title: Open-Meteo Air Quality API
+  version: 1.0.0
+paths:
+  /air-quality:
+    get:
+      operationId: getAirQuality
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: current
+          in: query
+          schema:
+            type: string
+        - name: hourly
+          in: query
+          schema:
+            type: string

@@ -1,0 +1,15 @@
+api_id: business
+base_url: https://openapi.tianyancha.com/services/open/
+auth_header: Authorization
+auth_value: YOUR_TIANYANCHA_TOKEN
+cache_ttl: 86400
+cache_methods: [GET]
+slim_mode: strict
+include_fields:
+  - result.companyName
+  - result.regStatus
+  - result.regCapital
+  - result.estiblishTime
+  - result.legalPersonName
+  - result.creditCode
+  - result.companyType

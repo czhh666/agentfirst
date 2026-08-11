@@ -1,0 +1,21 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.zippopotam.us/
+info:
+  title: Zippopotam Postal Code API
+  version: 1.0.0
+paths:
+  /{country}/{postal}:
+    get:
+      operationId: lookupPostal
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: postal
+          in: path
+          required: true
+          schema:
+            type: string
