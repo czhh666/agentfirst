@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run tests (excluding live network tests)
+        run: python -m pytest tests -q -m "not live" --no-header
+      - name: Build check
+        run: python -m agentfirst.app --config config.example.yaml install weather && python -c "from agentfirst.app import create_app; from agentfirst.config import load_config; create_app(load_config('config.example.yaml')); print('app builds OK')"

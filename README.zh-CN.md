@@ -2,6 +2,7 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12+-green.svg)](requirements.txt)
+[![CI](https://github.com/czhh666/agentfirst/actions/workflows/ci.yml/badge.svg)](https://github.com/czhh666/agentfirst/actions/workflows/ci.yml)
 
 [English](README.md) | 中文
 
