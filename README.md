@@ -77,6 +77,16 @@ python -m agentfirst.app --config config.yaml install logistics
 - **Auto-degrade**: invalid JSON falls back to raw passthrough — **never corrupts data**
 - **Short field mapping**: `temperature_2m → t`, one more slice off what the LLM sees
 
+## Resilience & control
+
+- **Auto retry**: exponential backoff (0.3s→0.6s) on 429/5xx and connection errors — idempotent methods only (GET/HEAD/PUT/DELETE)
+- **Per-request overrides** (steer without restart):
+  - `X-Skip-Cache: true` — bypass cache for this request
+  - `X-Force-Slim: strict|safe|off` — override slim mode per request
+  - `X-Cache-TTL: <seconds>` — override cache TTL per request
+
+Design & roadmap: [docs/IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md)
+
 ## Control plane
 
 ```bash

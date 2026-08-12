@@ -64,25 +64,35 @@ def create_app(config: Config, client: httpx.AsyncClient | None = None) -> FastA
         body = await request.body()
 
         ckey = cache_key(api_id, request.method, endpoint.path, query)
-        cacheable = request.method.upper() in api.cache_methods and api.cache_ttl > 0
+        cacheable = (request.method.upper() in api.cache_methods and api.cache_ttl > 0
+                     and request.headers.get("X-Skip-Cache", "").lower() != "true")
+        slim_mode = request.headers.get("X-Force-Slim", api.slim_mode)
+        if slim_mode not in ("strict", "safe", "off"):
+            slim_mode = api.slim_mode
+        try:
+            cache_ttl = int(request.headers.get("X-Cache-TTL", api.cache_ttl))
+        except ValueError:
+            cache_ttl = api.cache_ttl
         cached = cache.get(ckey) if cacheable else None
         if cached is not None:
-            out, mode = slim_response(cached, api.slim_mode, api.include_fields, api.short_map)
+            out, mode = slim_response(cached, slim_mode, api.include_fields, api.short_map)
             cost = billing.charge(user, api_id, True)
             telemetry.log_request(user, api_id, endpoint.path, True, len(cached), len(cached) * (1 / 3.5), cost, 200)
             return Response(content=out, media_type="application/json",
                             headers={"X-Cache": "HIT", "X-Slim": mode})
 
+        idempotent = request.method.upper() in ("GET", "HEAD", "PUT", "DELETE")
         status, headers, content = await upstream.call(
-            request.method, url, query, body, api.auth_header, api.auth_value)
+            request.method, url, query, body, api.auth_header, api.auth_value,
+            retries=2 if idempotent else 0)
         if status >= 400:
             telemetry.log_request(user, api_id, endpoint.path, False, len(content), 0, 0.0, status)
             return Response(content=content, status_code=status,
                             headers={"X-Cache": "MISS", "X-Upstream-Status": str(status)})
 
-        out, mode = slim_response(content, api.slim_mode, api.include_fields, api.short_map)
+        out, mode = slim_response(content, slim_mode, api.include_fields, api.short_map)
         if cacheable:
-            cache.set(ckey, content, api.cache_ttl)
+            cache.set(ckey, content, cache_ttl)
         cost = billing.charge(user, api_id, False)
         telemetry.log_request(user, api_id, endpoint.path, False, len(content), len(content) * (1 / 3.5), cost, status)
         try:
