@@ -85,6 +85,7 @@ python -m agentfirst.app --config config.yaml install logistics
   - `X-Skip-Cache: true` — bypass cache for this request
   - `X-Force-Slim: strict|safe|off` — override slim mode per request
   - `X-Cache-TTL: <seconds>` — override cache TTL per request
+- **Async polling wrapper** (`async_poll` config): submit once, the gateway polls the upstream status endpoint until done — the Agent stops polling (saves ~99% polling tokens)
 
 Design & roadmap: [docs/IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md)
 

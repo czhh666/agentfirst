@@ -1,8 +1,10 @@
 import argparse
+import asyncio
 import json
 import os
 import shutil
 import sys
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -20,6 +22,61 @@ from .proxy import Upstream
 from .registry import ApiSpec, build_spec, load_spec_file, match_endpoint
 from .slimmer import slim_response
 from .telemetry import Telemetry
+
+
+def _normalize_poll_path(path: str) -> str:
+    return path if path.startswith("/") else "/" + path
+
+
+async def _async_poll(upstream, api, poll_cfg, submit_url, query, body,
+                      slim_mode, include_fields, short_map):
+    status_path = _normalize_poll_path(poll_cfg.get("status_path", ""))
+    task_id_field = poll_cfg.get("task_id_field", "task_id")
+    done_field = poll_cfg.get("done_field", "status")
+    done_values = poll_cfg.get("done_values", ["completed", "failed", "success"])
+    interval = float(poll_cfg.get("interval", 1.0))
+    max_wait = float(poll_cfg.get("max_wait", 60))
+
+    status, headers, content = await upstream.call(
+        "POST", submit_url, query, body, api.auth_header, api.auth_value, retries=0)
+    if status >= 400:
+        return Response(content=content, status_code=status,
+                        headers={"X-Upstream-Status": str(status)})
+
+    try:
+        submit_data = json.loads(content)
+        task_id = submit_data.get(task_id_field) if isinstance(submit_data, dict) else None
+    except ValueError:
+        task_id = None
+    if not task_id:
+        out, mode = slim_response(content, slim_mode, include_fields, short_map)
+        return Response(content=out, status_code=status, headers={"X-Slim": mode})
+
+    deadline = time.time() + max_wait
+    last_status, last_content = status, content
+    base = api.base_url.rstrip("/")
+    while True:
+        await asyncio.sleep(interval)
+        s, h, c = await upstream.call(
+            "GET", base + status_path.replace("{task_id}", str(task_id)),
+            None, None, api.auth_header, api.auth_value, retries=0)
+        last_status, last_content = s, c
+        if s >= 400:
+            break
+        try:
+            data = json.loads(c)
+            if isinstance(data, dict) and data.get(done_field) in done_values:
+                break
+        except ValueError:
+            break
+        if time.time() >= deadline:
+            break
+
+    out, mode = slim_response(last_content, slim_mode, include_fields, short_map)
+    resp_headers = {"X-Slim": mode, "X-Polled": "true"}
+    if headers.get("content-type"):
+        resp_headers["Content-Type"] = headers["content-type"]
+    return Response(content=out, status_code=last_status, headers=resp_headers)
 
 
 def create_app(config: Config, client: httpx.AsyncClient | None = None) -> FastAPI:
@@ -93,6 +150,13 @@ def create_app(config: Config, client: httpx.AsyncClient | None = None) -> FastA
                             headers={"X-Cache": "HIT", "X-Slim": mode})
 
         idempotent = request.method.upper() in ("GET", "HEAD", "PUT", "DELETE")
+        poll_cfg = api.async_poll or {}
+        is_submit = (poll_cfg and request.method.upper() == "POST"
+                     and _normalize_poll_path(poll_cfg.get("submit_path", "")) == endpoint.path)
+        if is_submit:
+            return await _async_poll(upstream, api, poll_cfg, url, query, body,
+                                     slim_mode, api.include_fields, api.short_map)
+
         status, headers, content = await upstream.call(
             request.method, url, query, body, api.auth_header, api.auth_value,
             retries=2 if idempotent else 0)

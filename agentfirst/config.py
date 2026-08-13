@@ -16,6 +16,7 @@ class ApiConfig:
     slim_mode: str = "safe"
     include_fields: list = field(default_factory=list)
     short_map: dict = field(default_factory=dict)
+    async_poll: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -51,6 +52,7 @@ def load_config(path: str) -> Config:
             slim_mode=cfg.get("slim_mode", "safe"),
             include_fields=list(cfg.get("include_fields", [])),
             short_map=dict(cfg.get("short_map", {})),
+            async_poll=dict(cfg.get("async_poll", {})),
         )
     cfg = Config(
         db_path=raw.get("db_path", "data/agentfirst.db"),

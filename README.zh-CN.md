@@ -101,6 +101,7 @@ models:
   - `X-Skip-Cache: true` — 本次请求绕过缓存
   - `X-Force-Slim: strict|safe|off` — 本次覆盖瘦身模式
   - `X-Cache-TTL: <秒>` — 本次覆盖缓存时长
+- **异步轮询封装**（`async_poll` 配置）：Agent 提交一次，网关内部轮询状态直到完成——Agent 不再轮询（省 ~99% 轮询 token）
 
 方案与路线图：[docs/IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md)
 
