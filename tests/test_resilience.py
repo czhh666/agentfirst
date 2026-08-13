@@ -2,8 +2,11 @@ import asyncio
 import json
 
 import httpx
+import pytest
+import yaml
 
 from agentfirst.app import create_app
+from agentfirst.config import ApiConfig, Config
 
 import conftest
 
@@ -113,4 +116,79 @@ def test_cache_ttl_header_overrides_ttl(config):
 
     assert r2.headers["X-Cache"] == "MISS", "X-Cache-TTL: 0 must disable caching for this request"
     assert transport.counter["calls"] == 2
+    asyncio.run(upstream.aclose())
+
+
+def _config_with_post(tmp_path):
+    spec_file = tmp_path / "spec.yaml"
+    spec_file.write_text(
+        yaml.safe_dump({
+            "openapi": "3.0.0",
+            "servers": [{"url": "https://upstream.test/v1/"}],
+            "paths": {
+                "/orders": {"post": {"operationId": "createOrder"}},
+                "/forecast": {"get": {"operationId": "getForecast"}},
+            },
+        }, allow_unicode=True),
+        encoding="utf-8",
+    )
+    return Config(
+        db_path=str(tmp_path / "test.db"),
+        users={"sk-test": "alice"},
+        models={"claude-sonnet-4-5": {"input": 3.0, "output": 15.0}},
+        pricing={"miss": 0.0005, "hit": 0.00025},
+        apis={"weather": ApiConfig(
+            api_id="weather", spec_path=str(spec_file),
+            base_url="https://upstream.test/v1/",
+            cache_ttl=60, cache_methods=("GET",), slim_mode="safe",
+        )},
+    )
+
+
+def test_idempotency_key_replays_without_duplicate_call(tmp_path):
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        return httpx.Response(200, json={"order_id": 123})
+
+    transport = _make_transport(handler)
+    upstream = httpx.AsyncClient(transport=transport)
+    app = create_app(_config_with_post(tmp_path), client=upstream)
+
+    h = {"X-Api-Key": "sk-test", "Idempotency-Key": "abc-123"}
+    r1 = _run(app, "POST", "/v1/proxy/weather/orders", headers=h)
+    r2 = _run(app, "POST", "/v1/proxy/weather/orders", headers=h)
+
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+    assert r2.headers.get("X-Idempotent-Replay") == "true"
+    assert len(calls) == 1, f"upstream called {len(calls)} times, expected once"
+    assert r1.content == r2.content
+
+    r3 = _run(app, "POST", "/v1/proxy/weather/orders",
+              headers={"X-Api-Key": "sk-test", "Idempotency-Key": "xyz-456"})
+    assert len(calls) == 2, "different idempotency key must trigger a new call"
+    assert "X-Idempotent-Replay" not in r3.headers
+
+    asyncio.run(upstream.aclose())
+
+
+def test_idempotency_without_key_does_not_dedupe(tmp_path):
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        return httpx.Response(200, json={"order_id": 123})
+
+    transport = _make_transport(handler)
+    upstream = httpx.AsyncClient(transport=transport)
+    app = create_app(_config_with_post(tmp_path), client=upstream)
+
+    h = {"X-Api-Key": "sk-test"}
+    _run(app, "POST", "/v1/proxy/weather/orders", headers=h)
+    _run(app, "POST", "/v1/proxy/weather/orders", headers=h)
+
+    assert len(calls) == 2, "no idempotency key = no dedup, each POST hits upstream"
+
     asyncio.run(upstream.aclose())

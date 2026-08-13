@@ -96,6 +96,7 @@ models:
 ## 弹性与控制
 
 - **自动重试**：429/5xx/连接错误指数退避重试（0.3s→0.6s），仅限幂等方法（GET/HEAD/PUT/DELETE）
+- **幂等去重**：`Idempotency-Key` 请求头去重写请求——重发的 POST 直接返回原结果，不重复执行上游（Stripe 同款）
 - **每请求覆盖头**（无需重启即可 steer）：
   - `X-Skip-Cache: true` — 本次请求绕过缓存
   - `X-Force-Slim: strict|safe|off` — 本次覆盖瘦身模式

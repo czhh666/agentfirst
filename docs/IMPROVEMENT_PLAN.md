@@ -1,6 +1,6 @@
 # 中断与恢复 + Steer 改进方案
 
-> 状态: **v0.2.0 已交付改进 1(重试) + 3A(覆盖头)** | 提案 v1.0 | 对应评论问题: "怎么支持中断和恢复，steer"
+> 状态: **v0.2.0 已交付改进 1(重试) + 3A(覆盖头); v0.3.0 已交付改进 2(幂等去重)** | 提案 v1.0 | 对应评论问题: "怎么支持中断和恢复，steer"
 > 设计原则: 保持纯代码、不依赖 LLM、每项都可独立验收、向后兼容
 
 ---
@@ -45,9 +45,11 @@ async def call(self, method, url, query, body, auth_header, auth_value,
 
 ---
 
-## 改进 2: 幂等去重(Idempotency)
+## 改进 2: 幂等去重(Idempotency) — ✅ v0.3.0 已实现
 
 **问题**: POST 响应丢失后重发可能重复执行(下单/扣费类危险)。GET 已有缓存兜底, POST 没有。
+
+**实现**: `Idempotency-Key` 请求头(Stripe 同款)。`cache.py` 新增 `Idempotency` 类(SQLite `idem` 表, TTL 24h), 按 `sha256(user|api_id|idem_key)` 去重。请求带 key 时: 命中 → 原样返回上次响应(带 `X-Idempotent-Replay: true`); 未命中 → 执行上游, 成功后(状态 <400)写记录。
 
 **方案**: 支持 `Idempotency-Key` 请求头(标准做法, Stripe 同款)。同 key 的进行中/已完成请求直接返回同一结果。
 

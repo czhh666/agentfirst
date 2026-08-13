@@ -44,3 +44,43 @@ class Cache:
 
     def close(self) -> None:
         self._conn.close()
+
+
+class Idempotency:
+    def __init__(self, db_path: str, ttl: int = 86400):
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        self.db_path = db_path
+        self.ttl = ttl
+        self._conn = sqlite3.connect(db_path, check_same_thread=False)
+        self._conn.execute(
+            "CREATE TABLE IF NOT EXISTS idem ("
+            "key TEXT PRIMARY KEY, status INTEGER, body BLOB, content_type TEXT, expires_at REAL)"
+        )
+        self._conn.execute("CREATE INDEX IF NOT EXISTS idx_idem_expires ON idem(expires_at)")
+        self._conn.commit()
+
+    def get(self, key: str):
+        row = self._conn.execute(
+            "SELECT status, body, content_type FROM idem WHERE key=? AND expires_at > ?",
+            (key, time.time()),
+        ).fetchone()
+        if not row:
+            return None
+        return {"status": row[0], "body": row[1], "content_type": row[2]}
+
+    def set(self, key: str, status: int, body: bytes, content_type: str | None) -> None:
+        self._conn.execute(
+            "INSERT INTO idem (key, status, body, content_type, expires_at) VALUES (?,?,?,?,?) "
+            "ON CONFLICT(key) DO UPDATE SET status=excluded.status, body=excluded.body, "
+            "content_type=excluded.content_type, expires_at=excluded.expires_at",
+            (key, status, body, content_type, time.time() + self.ttl),
+        )
+        self._conn.commit()
+
+    def close(self) -> None:
+        self._conn.close()
+
+
+def idempotency_key(user: str, api_id: str, idem_key: str) -> str:
+    raw = json.dumps([user, api_id, idem_key], separators=(",", ":"), sort_keys=True)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()

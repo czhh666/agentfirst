@@ -80,6 +80,7 @@ python -m agentfirst.app --config config.yaml install logistics
 ## Resilience & control
 
 - **Auto retry**: exponential backoff (0.3s→0.6s) on 429/5xx and connection errors — idempotent methods only (GET/HEAD/PUT/DELETE)
+- **Idempotency**: `Idempotency-Key` header dedupes writes — re-sent POSTs return the original result without re-executing upstream (Stripe-style)
 - **Per-request overrides** (steer without restart):
   - `X-Skip-Cache: true` — bypass cache for this request
   - `X-Force-Slim: strict|safe|off` — override slim mode per request

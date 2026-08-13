@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
 
 from .billing import Billing
-from .cache import Cache, cache_key
+from .cache import Cache, Idempotency, cache_key, idempotency_key
 from .config import ApiConfig, Config, load_config
 from .estimator import estimate
 from .proxy import Upstream
@@ -39,6 +39,7 @@ def create_app(config: Config, client: httpx.AsyncClient | None = None) -> FastA
         specs[api_id] = build_spec(api_id, spec_dict, api.base_url)
 
     cache = Cache(config.db_path)
+    idem = Idempotency(config.db_path)
     telemetry = Telemetry(config.db_path)
     billing = Billing(config.db_path, config.pricing)
     upstream = Upstream(client or httpx.AsyncClient(follow_redirects=True))
@@ -62,6 +63,16 @@ def create_app(config: Config, client: httpx.AsyncClient | None = None) -> FastA
             raise HTTPException(status_code=404, detail=f"no endpoint {request.method} /{path}")
         query = dict(request.query_params)
         body = await request.body()
+
+        idem_req_key = request.headers.get("Idempotency-Key")
+        if idem_req_key:
+            replay = idem.get(idempotency_key(user, api_id, idem_req_key))
+            if replay is not None:
+                resp_headers = {"X-Idempotent-Replay": "true"}
+                if replay["content_type"]:
+                    resp_headers["Content-Type"] = replay["content_type"]
+                return Response(content=replay["body"], status_code=replay["status"],
+                                headers=resp_headers)
 
         ckey = cache_key(api_id, request.method, endpoint.path, query)
         cacheable = (request.method.upper() in api.cache_methods and api.cache_ttl > 0
@@ -104,6 +115,9 @@ def create_app(config: Config, client: httpx.AsyncClient | None = None) -> FastA
         resp_headers = {"X-Cache": "MISS", "X-Slim": mode}
         if headers.get("content-type"):
             resp_headers["Content-Type"] = headers["content-type"]
+        if idem_req_key and status < 400:
+            idem.set(idempotency_key(user, api_id, idem_req_key), status, out,
+                     headers.get("content-type"))
         return Response(content=out, status_code=status, headers=resp_headers)
 
     @app.get("/v1/estimate")
